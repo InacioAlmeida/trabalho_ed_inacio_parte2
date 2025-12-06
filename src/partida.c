@@ -33,6 +33,13 @@ void deletar_partida(Partida* p){
     free(p);
 }
 
+void partida_set_placar(Partida* p, int gols_time1, int gols_time2) {
+    if (p != NULL) {
+        p->gols_time1 = gols_time1;
+        p->gols_time2 = gols_time2;
+    }
+}
+
 // --- Implementação dos Getters ---
 
 int partida_get_id(Partida* p){

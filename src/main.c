@@ -1,70 +1,59 @@
 /*
  * Ponto de entrada principal do programa.
- * Responsável por orquestrar o sistema:
- * 1. Inicializa os TADs
- * 2. Carrega os dados dos arquivos CSV
- * 3. Processa as estatísticas
- * 4. Exibe o menu de UI
- * 5. Libera a memória ao sair
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h> // Para toupper()
-#include <stdbool.h> // Para usar valores booleanos (true/false)
+#include <ctype.h>
+#include <stdbool.h>
 
-// TADs criados
 #include "time.h"
 #include "partida.h"
 #include "bd_times.h"
 #include "bd_partidas.h"
 #include "campeonato.h"
 
-// --- Protótipos das Funções Auxiliares (privadas ao main) ---
-
+// --- Protótipos Auxiliares ---
 void limpar_tela();
 void pausar_tela();
 char ler_opcao();
 void imprimir_menu_principal();
 void imprimir_cabecalho_tabela();
 
-// Funções para cada opção do menu
+// Funções do menu
 void executar_consulta_time(BDTimes* bdt);
-void executar_consulta_partidas(BDTimes* bdt, BDPartidas* bdp);
+// ALTERADO: Agora retorna int (1 para sair, 0 para continuar)
+int executar_consulta_partidas(BDTimes* bdt, BDPartidas* bdp);
+void executar_inserir_partida(BDTimes* bdt, BDPartidas* bdp);
+void executar_atualizar_partida(BDTimes* bdt, BDPartidas* bdp);
+void executar_remover_partida(BDTimes* bdt, BDPartidas* bdp);
 void imprimir_tabela_classificacao(BDTimes* bdt);
 
 // --- Função Principal ---
 
 int main() {
-    // 1. Inicialização (Cria os gerenciadores)
     BDTimes* bdt = criar_bd_times();
     BDPartidas* bdp = criar_bd_partidas();
 
     if (bdt == NULL || bdp == NULL) {
-        printf("Erro fatal: Falha ao alocar memória para os gerenciadores.\n");
+        printf("Erro fatal: Falha ao alocar memória.\n");
         return 1;
     }
 
-    // 2. Carga (Lê os arquivos CSV)
     if (carregar_bd_times(bdt, "dados/times.csv") != 0) {
-        printf("Erro ao carregar times.csv. Verifique se o arquivo existe.\n");
+        printf("Erro ao carregar times.csv.\n");
         return 1;
     }
-    // NOTA: Mude o arquivo aqui para testar os 3 cenários
-    // "dados/partidas_vazio.csv"
-    // "dados/partidas_parcial.csv"
-    // "dados/partidas_completo.csv"
+    
     if (carregar_bd_partidas(bdp, "dados/partidas_completo.csv") != 0) {
-        printf("Erro ao carregar partidas.csv. Verifique se o arquivo existe.\n");
+        printf("Erro ao carregar partidas.csv.\n");
         return 1;
     }
 
-    // 3. Processamento
-    // Calcula Vitórias, Empates, Derrotas, Gols Marcados, Gols Sofridos
+    // Inicializa estatísticas
     campeonato_calcular_estatisticas(bdt, bdp);
 
-    // 4. Loop Principal (UI)
     char opcao;
     do {
         limpar_tela();
@@ -82,9 +71,18 @@ int main() {
                 pausar_tela();
                 break;
             case '3':
+                executar_atualizar_partida(bdt, bdp);
+                campeonato_calcular_estatisticas(bdt, bdp);
+                pausar_tela();
+                break;
             case '4':
+                executar_remover_partida(bdt, bdp);
+                campeonato_calcular_estatisticas(bdt, bdp);
+                pausar_tela();
+                break;
             case '5':
-                printf("\nOpção desabilitada nesta entrega (Parte I).\n");
+                executar_inserir_partida(bdt, bdp);
+                campeonato_calcular_estatisticas(bdt, bdp);
                 pausar_tela();
                 break;
             case '6':
@@ -102,220 +100,232 @@ int main() {
 
     } while (opcao != 'Q');
 
-
-    // 5. Limpeza 
-    // Libera toda a memória alocada pelo programa
     deletar_bd_times(bdt);
     deletar_bd_partidas(bdp);
 
     return 0;
 }
 
-// (1° Opção do menu) Lida com a consulta de time por prefixo.
+// Opção 1
 void executar_consulta_time(BDTimes* bdt) {
     char prefixo[100];
     limpar_tela();
     printf("--- Consultar Time ---\n");
     printf("Digite o nome ou prefixo do time: ");
-    
-    if (fgets(prefixo, sizeof(prefixo), stdin) == NULL) {
-        return; // Trata erro ou EOF
-    }
-    // Remove o '\n' que o fgets deixa no final
+    if (fgets(prefixo, sizeof(prefixo), stdin) == NULL) return;
     prefixo[strcspn(prefixo, "\n")] = 0;
 
     int num_encontrados = 0;
-    // get_times_bd_por_prefixo aloca um novo vetor
     Time** encontrados = get_times_bd_por_prefixo(bdt, prefixo, &num_encontrados);
-
     if (num_encontrados == 0) {
         printf("Nenhum time encontrado com o prefixo '%s'.\n", prefixo);
-        free(encontrados); // Libera o vetor mesmo se estiver vazio
+        if(encontrados) free(encontrados);
         return;
     }
-
     imprimir_cabecalho_tabela();
     for (int i = 0; i < num_encontrados; i++) {
         Time* t = encontrados[i];
         printf("%-3d %-10s %-3d %-3d %-3d %-3d %-3d %-3d %-3d\n",
-               time_get_id(t),
-               time_get_nome(t),
-               time_get_vitorias(t),
-               time_get_empates(t),
-               time_get_derrotas(t),
-               time_get_GM(t),
-               time_get_GS(t),
-               time_get_saldoGols(t),
-               time_get_pontuacao(t));
+               time_get_id(t), time_get_nome(t), time_get_vitorias(t), time_get_empates(t), time_get_derrotas(t),
+               time_get_GM(t), time_get_GS(t), time_get_saldoGols(t), time_get_pontuacao(t));
     }
-    // Libera a memória alocada por get_times_bd_por_prefixo
     free(encontrados);
 }
 
-// (2° opção do menu) Lida com a consulta de partidas por time.
-void executar_consulta_partidas(BDTimes* bdt, BDPartidas* bdp) {
+// Opção 2 - ALTERADO: Retorna int
+int executar_consulta_partidas(BDTimes* bdt, BDPartidas* bdp) {
     limpar_tela();
     printf("--- Consultar Partidas ---\n");
-    printf("1 - Por time mandante\n");
-    printf("2 - Por time visitante\n");
-    printf("3 - Por time mandante ou visitante\n");
-    printf("4 - Retornar ao menu principal\n");
-    printf("Escolha o modo de consulta: ");
+    printf("1 - Por time mandante\n2 - Por time visitante\n3 - Por time mandante ou visitante\n4 - Retornar\nEscolha: ");
     
     char sub_opcao = ler_opcao();
-    if (sub_opcao == '4') return;
-    if (sub_opcao < '1' || sub_opcao > '3') {
-        printf("Opção inválida.\n");
-        return;
-    }
+    
+    // CORREÇÃO: Retorna 1 se o usuário quiser sair
+    if (sub_opcao == '4') return 1; 
+    
+    if (sub_opcao < '1' || sub_opcao > '3') return 0;
 
     char prefixo[100];
     printf("Digite o nome ou prefixo do time: ");
-    
-    if (fgets(prefixo, sizeof(prefixo), stdin) == NULL) {
-        return; // Trata erro ou EOF
-    }
-    prefixo[strcspn(prefixo, "\n")] = 0; // Remove o '\n'
+    if (fgets(prefixo, sizeof(prefixo), stdin) == NULL) return 0;
+    prefixo[strcspn(prefixo, "\n")] = 0;
 
-    // Lógica da consulta em 3 etapas:
-
-    // 1. Achar os times (e seus IDs) que correspondem ao prefixo
     int num_times_filtro = 0;
     Time** times_filtro = get_times_bd_por_prefixo(bdt, prefixo, &num_times_filtro);
+    if (num_times_filtro == 0) { printf("Nenhum time encontrado.\n"); if(times_filtro) free(times_filtro); return 0; }
 
-    if (num_times_filtro == 0) {
-        printf("Nenhum time encontrado com o prefixo '%s'.\n", prefixo);
-        free(times_filtro);
+    int num_partidas_total = 0;
+    Partida** todas_partidas = get_todas_partidas_bd(bdp, &num_partidas_total);
+    printf("\nPartidas encontradas:\nID  Time1        x   Time2\n----------------------------------\n");
+
+    int count = 0;
+    for (int i = 0; i < num_partidas_total; i++) {
+        Partida* p = todas_partidas[i];
+        int id1 = partida_get_id_time1(p);
+        int id2 = partida_get_id_time2(p);
+        bool match = false;
+        for (int j = 0; j < num_times_filtro; j++) {
+            int idf = time_get_id(times_filtro[j]);
+            if ((sub_opcao=='1' && id1==idf) || (sub_opcao=='2' && id2==idf) || (sub_opcao=='3' && (id1==idf || id2==idf))) match = true;
+        }
+        if (match) {
+            Time *t1 = get_time_bd_por_id(bdt, id1), *t2 = get_time_bd_por_id(bdt, id2);
+            printf("%-3d %-10s %d x %d %-10s\n", partida_get_id(p), t1?time_get_nome(t1):"?", partida_get_gols_time1(p), partida_get_gols_time2(p), t2?time_get_nome(t2):"?");
+            count++;
+        }
+    }
+    if(count==0) printf("Nenhuma partida encontrada.\n");
+    free(times_filtro);
+    
+    return 0; // Retorno normal
+}
+
+// Opção 5
+void executar_inserir_partida(BDTimes* bdt, BDPartidas* bdp) {
+    limpar_tela();
+    printf("--- Inserir Nova Partida ---\n");
+    int id1, id2, gols1, gols2;
+    printf("Time 1 ID: "); if(scanf("%d",&id1)!=1){fflush(stdin);return;}
+    printf("Time 2 ID: "); if(scanf("%d",&id2)!=1){fflush(stdin);return;}
+    printf("Placar time 1: "); if(scanf("%d",&gols1)!=1){fflush(stdin);return;}
+    printf("Placar time 2: "); if(scanf("%d",&gols2)!=1){fflush(stdin);getchar();return;}
+    getchar();
+
+    Time *t1 = get_time_bd_por_id(bdt, id1), *t2 = get_time_bd_por_id(bdt, id2);
+    if (!t1 || !t2 || id1 == id2) { printf("Dados inválidos.\n"); return; }
+
+    printf("\nConfirma inserção? (S/N)\nNEW %-10s x %-10s (%d-%d)\n", time_get_nome(t1), time_get_nome(t2), gols1, gols2);
+    if (ler_opcao() == 'S') {
+        int id = adicionar_partida_ao_bd(bdp, id1, id2, gols1, gols2);
+        printf(id != -1 ? "Sucesso. ID: %d\n" : "Erro.\n", id);
+    }
+}
+
+// Opção 3
+void executar_atualizar_partida(BDTimes* bdt, BDPartidas* bdp) {
+    limpar_tela();
+    
+    // CORREÇÃO: Verifica se o usuário pediu para voltar (retornou 1)
+    if (executar_consulta_partidas(bdt, bdp) == 1) {
+        return; // Retorna ao menu principal imediatamente
+    }
+    
+    printf("\nDigite o ID do registro a ser atualizado: ");
+    int id;
+    if (scanf("%d", &id) != 1) { fflush(stdin); return; }
+    getchar(); 
+
+    Partida* p = get_partida_bd_por_id(bdp, id);
+    if (p == NULL) {
+        printf("Partida com ID %d não encontrada.\n", id);
         return;
     }
 
-    // 2. Pegar todas as partidas
-    int num_partidas_total = 0;
-    Partida** todas_partidas = get_todas_partidas_bd(bdp, &num_partidas_total);
+    Time* t1 = get_time_bd_por_id(bdt, partida_get_id_time1(p));
+    Time* t2 = get_time_bd_por_id(bdt, partida_get_id_time2(p));
 
-    // 3. Iterar sobre todas as partidas e filtrar
-    int partidas_encontradas_count = 0;
-    printf("\nPartidas encontradas:\n");
-    printf("ID  Time1        x   Time2\n");
-    printf("----------------------------------\n");
+    printf("\nDados Atuais:\n");
+    printf("ID: %d | %s %d x %d %s\n", 
+           id, time_get_nome(t1), partida_get_gols_time1(p), partida_get_gols_time2(p), time_get_nome(t2));
 
-    for (int i = 0; i < num_partidas_total; i++) {
-        Partida* p = todas_partidas[i];
-        int id_time1 = partida_get_id_time1(p);
-        int id_time2 = partida_get_id_time2(p);
+    char buf[20];
+    int novo_gols1 = partida_get_gols_time1(p);
+    int novo_gols2 = partida_get_gols_time2(p);
 
-        bool partida_time1 = false; // O time do filtro é o mandante?
-        bool partida_time2 = false; // O time do filtro é o visitante?
-
-        // Verifica se o ID da partida bate com algum ID da lista do filtro
-        for (int j = 0; j < num_times_filtro; j++) {
-            int id_filtro = time_get_id(times_filtro[j]);
-            if (id_time1 == id_filtro) partida_time1 = true;
-            if (id_time2 == id_filtro) partida_time2 = true;
-        }
-
-        // Aplica a regra da sub-opção (1, 2 ou 3)
-        bool imprimir = false;
-        if (sub_opcao == '1' && partida_time1) imprimir = true;
-        if (sub_opcao == '2' && partida_time2) imprimir = true;
-        if (sub_opcao == '3' && (partida_time1 || partida_time2)) imprimir = true;
-
-        if (imprimir) {
-            Time* time1 = get_time_bd_por_id(bdt, id_time1);
-            Time* time2 = get_time_bd_por_id(bdt, id_time2);
-            printf("%-3d %-10s %d x %d %-10s\n",
-                   partida_get_id(p),
-                   time_get_nome(time1),
-                   partida_get_gols_time1(p),
-                   partida_get_gols_time2(p),
-                   time_get_nome(time2));
-            partidas_encontradas_count++;
+    printf("Digite o novo placar para %s (ou '-' para manter): ", time_get_nome(t1));
+    if (fgets(buf, sizeof(buf), stdin)) {
+        buf[strcspn(buf, "\n")] = 0;
+        if (strcmp(buf, "-") != 0 && strlen(buf) > 0) {
+            novo_gols1 = atoi(buf);
         }
     }
 
-    if (partidas_encontradas_count == 0) {
-        printf("Nenhuma partida encontrada para os critérios.\n");
+    printf("Digite o novo placar para %s (ou '-' para manter): ", time_get_nome(t2));
+    if (fgets(buf, sizeof(buf), stdin)) {
+        buf[strcspn(buf, "\n")] = 0;
+        if (strcmp(buf, "-") != 0 && strlen(buf) > 0) {
+            novo_gols2 = atoi(buf);
+        }
     }
 
-    // Libera a lista de times alocada por get_times_bd_por_prefixo
-    free(times_filtro);
+    printf("\nConfirma os novos valores? (S/N)\n");
+    printf("%s %d x %d %s\n", time_get_nome(t1), novo_gols1, novo_gols2, time_get_nome(t2));
+
+    if (ler_opcao() == 'S') {
+        atualizar_placar_partida_bd(bdp, id, novo_gols1, novo_gols2);
+        printf("Registro atualizado com sucesso.\n");
+    } else {
+        printf("Operação cancelada.\n");
+    }
 }
 
-/* (6° opção do menu) Imprime a tabela de classificação completa, ordenada por ID. */
+// Opção 4
+void executar_remover_partida(BDTimes* bdt, BDPartidas* bdp) {
+    limpar_tela();
+    
+    // CORREÇÃO: Verifica se o usuário pediu para voltar
+    if (executar_consulta_partidas(bdt, bdp) == 1) {
+        return;
+    }
+
+    printf("\nDigite o ID do registro a ser removido: ");
+    int id;
+    if (scanf("%d", &id) != 1) { fflush(stdin); return; }
+    getchar();
+
+    Partida* p = get_partida_bd_por_id(bdp, id);
+    if (p == NULL) {
+        printf("Partida com ID %d não encontrada.\n", id);
+        return;
+    }
+
+    Time* t1 = get_time_bd_por_id(bdt, partida_get_id_time1(p));
+    Time* t2 = get_time_bd_por_id(bdt, partida_get_id_time2(p));
+
+    printf("\nTem certeza de que deseja excluir o registro abaixo? (S/N)\n");
+    printf("ID: %d | %s %d x %d %s\n", 
+           id, time_get_nome(t1), partida_get_gols_time1(p), partida_get_gols_time2(p), time_get_nome(t2));
+
+    if (ler_opcao() == 'S') {
+        if (remover_partida_bd(bdp, id) == 0) {
+            printf("Registro removido com sucesso.\n");
+        } else {
+            printf("Erro ao remover registro.\n");
+        }
+    } else {
+        printf("Operação cancelada.\n");
+    }
+}
+
 void imprimir_tabela_classificacao(BDTimes* bdt) {
     limpar_tela();
     int num_times = 0;
     Time** todos_times = get_todos_times_bd(bdt, &num_times);
-
-    if (num_times == 0) {
-        printf("Nenhum time cadastrado.\n");
-        return;
-    }
-
-    printf("--- Tabela de Classificação (Por ID) ---\n");
+    if (num_times == 0) { printf("Nenhum time cadastrado.\n"); return; }
+    printf("--- Tabela de Classificação ---\n");
     imprimir_cabecalho_tabela();
-    
-    // Conforme requisito do PDF, os times serão impressos por ID 
     for (int i = 0; i < num_times; i++) {
         Time* t = todos_times[i];
-        
         printf("%-3d %-10s %-3d %-3d %-3d %-3d %-3d %-3d %-3d\n",
-               time_get_id(t),
-               time_get_nome(t),
-               time_get_vitorias(t),      // V
-               time_get_empates(t),       // E
-               time_get_derrotas(t),      // D
-               time_get_GM(t),            // GM
-               time_get_GS(t),            // GS
-               time_get_saldoGols(t),     // S
-               time_get_pontuacao(t));    // PG
+               time_get_id(t), time_get_nome(t), time_get_vitorias(t), time_get_empates(t), time_get_derrotas(t),
+               time_get_GM(t), time_get_GS(t), time_get_saldoGols(t), time_get_pontuacao(t));
     }
 }
-
-// --- Funções Utilitárias ---
 
 void imprimir_menu_principal() {
-    printf("==========================================\n");
-    printf(" Sistema de Gerenciamento de Partidas\n");
-    printf("==========================================\n");
-    printf("1 - Consultar time\n");
-    printf("2 - Consultar partidas\n");
-    printf("3 - Atualizar partida (N/A)\n");
-    printf("4 - Remover partida (N/A)\n");
-    printf("5 - Inserir partida (N/A)\n");
-    printf("6 - Imprimir tabela de classificação\n");
-    printf("Q - Sair\n");
-    printf("==========================================\n");
-    printf("Escolha uma opção: ");
+    printf("==========================================\n Sistema de Gerenciamento de Partidas\n==========================================\n");
+    printf("1 - Consultar time\n2 - Consultar partidas\n3 - Atualizar partida\n4 - Remover partida\n5 - Inserir partida\n6 - Imprimir tabela\nQ - Sair\n==========================================\nEscolha uma opção: ");
 }
 
-// Imprime o cabeçalho padrão para as tabelas (Opção 1 e 6)
 void imprimir_cabecalho_tabela() {
-    printf("------------------------------------------------------------------\n");
-    printf("%-3s %-10s %-3s %-3s %-3s %-3s %-3s %-3s %-3s\n",
-           "ID", "Time", "V", "E", "D", "GM", "GS", "S", "PG");
-    printf("------------------------------------------------------------------\n");
+    printf("------------------------------------------------------------------\n%-3s %-10s %-3s %-3s %-3s %-3s %-3s %-3s %-3s\n------------------------------------------------------------------\n", "ID", "Time", "V", "E", "D", "GM", "GS", "S", "PG");
 }
 
-// Lê a opção do usuário (apenas o primeiro caractere) de forma segura.
 char ler_opcao() {
     char buffer[10];
-    // Usei fgets por ser mais seguro (evita lixo no buffer)
-    if (fgets(buffer, sizeof(buffer), stdin) != NULL) {
-        // Pega o primeiro caractere e o converte para maiúsculo
-        return toupper(buffer[0]);
-    }
-    return '\0'; // Retorna nulo em caso de erro
+    if (fgets(buffer, sizeof(buffer), stdin) != NULL) return toupper(buffer[0]);
+    return '\0';
 }
 
-// Limpa a tela do console (só funciona em linux, melhor SO, btw)
-void limpar_tela() {
-    // I <3 Tux
-    system("clear"); 
-}
-
-// Pausa a execução e espera o usuário pressionar Enter.
-void pausar_tela() {
-    printf("\nPressione Enter para continuar...");
-    getchar(); // Apenas espera por uma tecla
-}
+void limpar_tela() { system("clear"); }
+void pausar_tela() { printf("\nPressione Enter para continuar..."); getchar(); }

@@ -3,33 +3,31 @@
 
 #include "partida.h" 
 
-/*
- * Definição do TAD BDPartidas (Gerenciador de Partidas).
- * Este TAD é responsável por carregar e armazenar em memória
- * a coleção de todas as partidas lidas do arquivo .csv.
- */
-
 typedef struct bddepartidas BDPartidas;
 
-/*
- * Cria uma nova instância do gerenciador de partidas.
- * Retorna um ponteiro para o BDPartidas alocado, ou NULL em caso de erro.
- */
 BDPartidas* criar_bd_partidas();
-
-//Libera a memória do gerenciador e de todas as partidas que ele contém.
 void deletar_bd_partidas(BDPartidas* bdp);
-
-/*
- * Carrega os dados de partidas de um arquivo .csv para a memória.
- * Retorna 0 em caso de sucesso, ou -1 em caso de erro.
- */
 int carregar_bd_partidas(BDPartidas* bdp, const char* filename);
+Partida** get_todas_partidas_bd(BDPartidas* bdp, int* count);
+
+int adicionar_partida_ao_bd(BDPartidas* bdp, int id_time1, int id_time2, int gols1, int gols2);
 
 /*
- * Retorna um ponteiro para o vetor de todas as partidas carregadas.
- * O ponteiro 'count' será preenchido com o número de partidas no vetor.
+ * Busca uma única partida pelo ID.
+ * Retorna o ponteiro para a partida ou NULL se não encontrar.
  */
-Partida** get_todas_partidas_bd(BDPartidas* bdp, int* count);
+Partida* get_partida_bd_por_id(BDPartidas* bdp, int id);
+
+/*
+ * Remove uma partida do banco de dados (da lista).
+ * Retorna 0 em sucesso, -1 se o ID não existir.
+ */
+int remover_partida_bd(BDPartidas* bdp, int id);
+
+/*
+ * Atualiza o placar de uma partida pelo ID.
+ * Retorna 0 em sucesso, -1 se o ID não existir.
+ */
+int atualizar_placar_partida_bd(BDPartidas* bdp, int id, int gols1, int gols2);
 
 #endif
