@@ -1,41 +1,51 @@
-# 🏆 Trabalho Prático - Campeonato Computacional de Futebol (Parte II)
+# 🏆 Trabalho Prático - Campeonato Computacional de Futebol (Parte I & II)
 
-Este projeto é um sistema de linha de comando (CLI) desenvolvido em C para gerenciamento completo e consulta de dados de um campeonato de futebol.
+Este projeto é um sistema de linha de comando (CLI) desenvolvido em C para gerenciamento e consulta de dados de um campeonato de futebol.
 
-Esta é a **Parte II** do trabalho acadêmico, que evolui o sistema original substituindo estruturas estáticas por **Listas Encadeadas** e implementando funcionalidades de manutenção de dados (Inserir, Atualizar, Remover) e ordenação por mérito esportivo, conforme especificado nos requisitos.
+O sistema carrega os dados de times e partidas a partir de arquivos `.csv`, processa os resultados em memória (calculando vitórias, empates, derrotas, gols, etc.) e fornece ao usuário uma interface baseada em menu para manter e consultar essas estatísticas.
 
-## 🚀 Novas Funcionalidades (Parte II)
+Este projeto implementa os requisitos da **Parte I** (leitura e consulta) e da **Parte II** (manutenção CRUD, listas encadeadas e ordenação).
 
-Além das funcionalidades de leitura da Parte I, o sistema agora suporta:
+## 🚀 Funcionalidades
 
-* **Estruturas Dinâmicas:** Utilização de **Listas Simplesmente Encadeadas** para armazenar times e partidas, permitindo manipulação dinâmica de memória sem limites fixos de tamanho.
-* **Inserir Partida (Opção 5):** Cadastro de novos jogos com geração automática de ID (Auto-Incremento).
-* **Atualizar Partida (Opção 3):** Alteração de placares de jogos já existentes, com reflexo imediato na tabela.
-* **Remover Partida (Opção 4):** Exclusão de jogos do sistema, revertendo os pontos e estatísticas dos times envolvidos.
-* **Ordenação (Opção 6):** A tabela de classificação é exibida ordenada decrescentemente por mérito esportivo: **Pontos (PG) > Vitórias (V) > Saldo de Gols (S)**.
-* **Recálculo Automático:** Integridade dos dados garantida através de uma estratégia de recálculo total das estatísticas após qualquer alteração.
+### Funcionalidades Base (Parte I)
+* **Carregamento de Dados:** Lê os arquivos `times.csv` e `partidas_completo.csv` da pasta `dados/` para a memória na inicialização.
+* **Cálculo de Estatísticas:** Processa todas as partidas carregadas para calcular e acumular:
+    * Vitórias (V), Empates (E), Derrotas (D)
+    * Gols Marcados (GM), Gols Sofridos (GS)
+    * Saldo de Gols (S) e Pontos Ganhos (PG)
+* **Opção 1: Consultar Time:** Busca o desempenho de um time usando um nome ou prefixo.
+* **Opção 2: Consultar Partidas:** Busca partidas específicas por time (mandante, visitante ou ambos).
+
+### Novas Funcionalidades (Parte II)
+* **Estruturas Dinâmicas:** Substituição completa dos vetores estáticos por **Listas Simplesmente Encadeadas**, permitindo manipulação ilimitada de dados (restrito apenas pela memória RAM).
+* **Opção 5: Inserir Partida:** Permite cadastrar novos jogos com geração automática de ID (Auto-Incremento).
+* **Opção 3: Atualizar Partida:** Permite alterar o placar de jogos existentes, recalculando automaticamente a tabela.
+* **Opção 4: Remover Partida:** Permite excluir jogos do banco de dados, revertendo os pontos e estatísticas dos times envolvidos.
+* **Opção 6: Tabela Ordenada:** A tabela de classificação agora é exibida ordenada decrescentemente por mérito esportivo: **Pontos (PG) > Vitórias (V) > Saldo de Gols (S)**.
+* **Consistência Automática:** Implementada estratégia de "Zerar e Recalcular" para garantir que a tabela sempre reflita fielmente o estado atual das partidas após edições ou remoções.
 
 ## 📂 Estrutura de Arquivos
 
-O projeto mantém a organização modular:
+O projeto está organizado na seguinte estrutura de pastas para modularidade:
 
 ```text
-trabalho_2/
-├── Makefile               # Script de compilação
-├── include/               # Interfaces (Headers) dos TADs
-│   ├── bd_partidas.h      # Gerenciador de Partidas (Lista Encadeada)
-│   ├── bd_times.h         # Gerenciador de Times (Lista Encadeada)
-│   ├── campeonato.h       # Lógica de negócio (Cálculo de estatísticas)
-│   ├── partida.h          # Modelo de dados Partida
-│   └── time.h             # Modelo de dados Time
+trabalho_ed/
+├── Makefile               # Controla a compilação
+├── include/               # Headers dos TADs criados
+│   ├── bd_partidas.h      # Interface da Lista de Partidas
+│   ├── bd_times.h         # Interface da Lista de Times
+│   ├── campeonato.h       # Lógica de negócio
+│   ├── partida.h
+│   └── time.h
 ├── src/                   # Implementação (.c)
-│   ├── bd_partidas.c      # Implementação da lista e operações CRUD
-│   ├── bd_times.c         # Implementação da lista e ordenação (qsort)
-│   ├── campeonato.c       # Lógica de "Zerar e Recalcular"
-│   ├── main.c             # Interface de Usuário (Menu e Validações)
+│   ├── bd_partidas.c      # Implementação de Lista Encadeada + CRUD
+│   ├── bd_times.c         # Implementação de Lista Encadeada + Ordenação
+│   ├── campeonato.c       # Lógica de Recálculo
+│   ├── main.c             # Menu e Interface de Usuário
 │   ├── partida.c
 │   └── time.c
-└── dados/                 # Base de dados CSV
+└── dados/                 # Arquivos CSV de entrada
     ├── partidas_completo.csv
     ├── partidas_parcial.csv
     ├── partidas_vazio.csv
