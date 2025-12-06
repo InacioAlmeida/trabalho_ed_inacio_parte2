@@ -1,10 +1,10 @@
 # 🏆 Trabalho Prático - Campeonato Computacional de Futebol (Parte I & II)
 
-Este projeto é um sistema de linha de comando (CLI) desenvolvido em C para gerenciamento e consulta de dados de um campeonato de futebol.
+Este trabalho é um sistema de linha de comando (CLI) desenvolvido em C para gerenciamento e consulta de dados de um campeonato de futebol.
 
 O sistema carrega os dados de times e partidas a partir de arquivos `.csv`, processa os resultados em memória (calculando vitórias, empates, derrotas, gols, etc.) e fornece ao usuário uma interface baseada em menu para manter e consultar essas estatísticas.
 
-Este projeto implementa os requisitos da **Parte I** (leitura e consulta) e da **Parte II** (manutenção CRUD, listas encadeadas e ordenação).
+Este projeto tem como base os requisitos da **Parte I** (leitura e consulta) e novas funcionalidade presentes na especificação da **Parte II** (manutenção CRUD, listas encadeadas e ordenação).
 
 ## 🚀 Funcionalidades
 
