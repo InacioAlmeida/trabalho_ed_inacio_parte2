@@ -1,7 +1,3 @@
-/*
- * Ponto de entrada principal do programa.
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,14 +19,12 @@ void imprimir_cabecalho_tabela();
 
 // Funções do menu
 void executar_consulta_time(BDTimes* bdt);
-// ALTERADO: Agora retorna int (1 para sair, 0 para continuar)
 int executar_consulta_partidas(BDTimes* bdt, BDPartidas* bdp);
 void executar_inserir_partida(BDTimes* bdt, BDPartidas* bdp);
 void executar_atualizar_partida(BDTimes* bdt, BDPartidas* bdp);
 void executar_remover_partida(BDTimes* bdt, BDPartidas* bdp);
 void imprimir_tabela_classificacao(BDTimes* bdt);
 
-// --- Função Principal ---
 
 int main() {
     BDTimes* bdt = criar_bd_times();
@@ -132,7 +126,6 @@ void executar_consulta_time(BDTimes* bdt) {
     free(encontrados);
 }
 
-// Opção 2 - ALTERADO: Retorna int
 int executar_consulta_partidas(BDTimes* bdt, BDPartidas* bdp) {
     limpar_tela();
     printf("--- Consultar Partidas ---\n");
@@ -140,7 +133,6 @@ int executar_consulta_partidas(BDTimes* bdt, BDPartidas* bdp) {
     
     char sub_opcao = ler_opcao();
     
-    // CORREÇÃO: Retorna 1 se o usuário quiser sair
     if (sub_opcao == '4') return 1; 
     
     if (sub_opcao < '1' || sub_opcao > '3') return 0;
@@ -205,9 +197,9 @@ void executar_inserir_partida(BDTimes* bdt, BDPartidas* bdp) {
 void executar_atualizar_partida(BDTimes* bdt, BDPartidas* bdp) {
     limpar_tela();
     
-    // CORREÇÃO: Verifica se o usuário pediu para voltar (retornou 1)
+    // Lembrar de corrigir depois
     if (executar_consulta_partidas(bdt, bdp) == 1) {
-        return; // Retorna ao menu principal imediatamente
+        return;
     }
     
     printf("\nDigite o ID do registro a ser atualizado: ");
@@ -263,7 +255,6 @@ void executar_atualizar_partida(BDTimes* bdt, BDPartidas* bdp) {
 void executar_remover_partida(BDTimes* bdt, BDPartidas* bdp) {
     limpar_tela();
     
-    // CORREÇÃO: Verifica se o usuário pediu para voltar
     if (executar_consulta_partidas(bdt, bdp) == 1) {
         return;
     }
