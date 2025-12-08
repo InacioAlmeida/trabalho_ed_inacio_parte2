@@ -112,8 +112,6 @@ int adicionar_partida_ao_bd(BDPartidas* bdp, int id_time1, int id_time2, int gol
     return novo_id;
 }
 
-// --- Novas Implementações da Etapa 3 ---
-
 Partida* get_partida_bd_por_id(BDPartidas* bdp, int id) {
     NodePartida* atual = bdp->head;
     while (atual != NULL) {
@@ -133,10 +131,8 @@ int remover_partida_bd(BDPartidas* bdp, int id) {
         if (partida_get_id(atual->partida) == id) {
             // Encontrou. Ajustar ponteiros.
             if (anterior == NULL) {
-                // Remoção da cabeça
                 bdp->head = atual->next;
             } else {
-                // Remoção do meio ou fim
                 anterior->next = atual->next;
             }
 
