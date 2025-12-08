@@ -1,10 +1,8 @@
-// Implementação da lógica de negócio central do campeonato.
-
 #include "campeonato.h"
 #include <stdlib.h> 
 
 void campeonato_calcular_estatisticas(BDTimes* bdt, BDPartidas* bdp) {
-    // 1. LIMPEZA: Zera estatísticas anteriores de TODOS os times
+    //Zera estatísticas anteriores de TODOS os times
     int num_times = 0;
     Time** todos_times = get_todos_times_bd(bdt, &num_times);
     
@@ -15,11 +13,10 @@ void campeonato_calcular_estatisticas(BDTimes* bdt, BDPartidas* bdp) {
         time_zerar_estatisticas(todos_times[i]);
     }
 
-    // 2. RECÁLCULO: Processa todas as partidas atuais da lista
+    //Processa todas as partidas atuais da lista
     int num_partidas = 0;
     Partida** todas_partidas = get_todas_partidas_bd(bdp, &num_partidas);
     
-    // Se não houver partidas, os times permanecem zerados (o que é correto)
     if (num_partidas == 0) return;
 
     for (int i = 0; i < num_partidas; i++) {
