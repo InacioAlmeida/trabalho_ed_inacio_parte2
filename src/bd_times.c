@@ -100,8 +100,6 @@ Time* get_time_bd_por_id(BDTimes* bdt, int id) {
     return NULL;
 }
 
-// --- Lógica de Ordenação (Etapa 5) ---
-
 // Função comparadora para o qsort
 // Retorna <0 se a vem antes de b (decrescente), >0 se b vem antes, 0 se iguais
 int comparar_times(const void* a, const void* b) {
@@ -123,7 +121,6 @@ int comparar_times(const void* a, const void* b) {
     int sB = time_get_saldoGols(timeB);
     if (sA != sB) return sB - sA;
 
-    // (Opcional) Desempate por ID (Crescente) para estabilidade visual
     return time_get_id(timeA) - time_get_id(timeB);
 }
 
